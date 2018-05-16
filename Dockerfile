@@ -1,8 +1,8 @@
 FROM ubuntu:xenial as catapult
 
 RUN apt-get update && apt-get -y install \
-      cmake git make automake libboost-dev libzmq-dev gcc g++ \
-      librocksdb-dev libbson-dev libmongoc-dev tar wget libtool
+      cmake git make automake libzmq-dev gcc g++ \
+      librocksdb-dev tar wget libtool libboost-all-dev
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
     echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
@@ -61,9 +61,14 @@ ENV PYTHON_EXECUTABLE=/usr/bin/python \
 
 RUN mkdir -p /tmp/catapult && \
     cd /tmp/catapult && \
-    git clone https://github.com/nemtech/catapult-server main --branch releases/stable --depth 1 && \
-    cd main && \
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebugInfo .. && \
+    wget -qO- https://github.com/nemtech/catapult-server/archive/v0.1.0.1.tar.gz | tar xzvf - --strip-components=1 && \
+    mkdir _build && cd _build && \
+    cmake -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+      -DCMAKE_CXX_FLAGS="-pthread" \
+      -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+      -DBSONCXX_LIB=/usr/lib/libbsoncxx.so \
+      -DMONGOCXX_LIB=/usr/lib/libmongocxx.so \
+      .. && \
     make publish && make && \
     make install && \
     cd / && rm -rf /tmp/catapult

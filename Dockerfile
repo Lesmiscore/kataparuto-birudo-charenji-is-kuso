@@ -2,21 +2,12 @@ FROM ubuntu:xenial as catapult
 
 RUN apt-get update && apt-get -y install \
       cmake git make automake libboost-dev libzmq-dev gcc g++ \
-      librocksdb-dev libbson-dev
+      librocksdb-dev libbson-dev libmongoc-dev
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
     echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
     apt-get update && apt-get -y install \
       mongodb-org
-
-RUN mkdir -p /tmp/mongocxx && \
-    cd /tmp/mongocxx && \
-    git clone https://github.com/mongodb/mongo-cxx-driver drv -b releases/stable --depth=1 && \
-    cd drv && \
-    git checkout r3.2.0 && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local . && \
-    make && make install && \
-    cd / && rm -rf /tmp/mongocxx
 
 RUN mkdir -p /tmp/gtest && \
     cd /tmp/gtest && \
@@ -26,6 +17,16 @@ RUN mkdir -p /tmp/gtest && \
     cmake CMakeLists.txt && \
     make && make install && \
     cd / && rm -rf /tmp/gtest
+
+RUN mkdir -p /tmp/mongocxx && \
+    cd /tmp/mongocxx && \
+    git clone https://github.com/mongodb/mongo-c-driver cdrv --depth=1 && \
+    git clone https://github.com/mongodb/mongo-cxx-driver drv -b releases/stable --depth=1 && \
+    cd drv && \
+    git checkout r3.2.0 && \
+    CMAKE_PREFIX_PATH="/tmp/mongocxx/cdrv" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local . && \
+    make && make install && \
+    cd / && rm -rf /tmp/mongocxx
 
 ENV PYTHON_EXECUTABLE=/usr/bin/python \
     BOOST_ROOT=/usr/bin \

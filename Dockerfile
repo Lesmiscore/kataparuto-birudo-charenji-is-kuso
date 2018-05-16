@@ -38,7 +38,7 @@ RUN mkdir -p /tmp/mongocxx && cd /tmp/mongocxx && \
     \
     cd ../ && \
     ./autogen.sh && \
-    cmake . && \
+    cmake -DCMAKE_BUILD_TYPE=Debug -DSASL_LIBS="" . && \
     make && make install && \
     cd ../ && \
     \

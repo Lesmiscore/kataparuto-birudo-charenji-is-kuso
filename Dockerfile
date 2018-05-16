@@ -2,7 +2,7 @@ FROM ubuntu:xenial as catapult
 
 RUN apt-get update && apt-get -y install \
       cmake git make automake libboost-dev libzmq-dev gcc g++ \
-      librocksdb-dev libbson-dev libmongoc-dev
+      librocksdb-dev libbson-dev libmongoc-dev tar wget libtool
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
     echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
@@ -18,13 +18,35 @@ RUN mkdir -p /tmp/gtest && \
     make && make install && \
     cd / && rm -rf /tmp/gtest
 
-RUN mkdir -p /tmp/mongocxx && \
-    cd /tmp/mongocxx && \
-    git clone https://github.com/mongodb/mongo-c-driver cdrv --depth=1 && \
+RUN mkdir -p /tmp/mongocxx && cd /tmp/mongocxx && \
+    \
+    mkdir bson && cd bson && \
+    wget -qO- https://github.com/mongodb/libbson/archive/1.9.5.tar.gz | tar zxvf - --strip-components=1 && \
+    cmake . && \
+    make && make install && \
+    cd ../ && \
+    \
+    mkdir mongoc && cd mongoc && \
+    wget -qO- https://github.com/mongodb/mongo-c-driver/archive/1.9.5.tar.gz | tar zxvf - --strip-components=1 && \
+    rm -rf src/libbson && \
+    mv ../bson src/libbson && \
+    \
+    cd src/zlib-1.2.11 && \
+    cmake . && \
+    make && make install && \
+    cd ../ && \
+    \
+    cd ../ && \
+    ./autogen.sh && \
+    cmake . && \
+    make && make install && \
+    cd ../ && \
+    \
     git clone https://github.com/mongodb/mongo-cxx-driver drv -b releases/stable --depth=1 && \
     cd drv && \
     git checkout r3.2.0 && \
-    CMAKE_PREFIX_PATH="/tmp/mongocxx/cdrv" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local . && \
+    CMAKE_PREFIX_PATH="/tmp/mongocxx/bson/build/cmake:/tmp/mongocxx/mongoc/src/zlib-1.2.11:/tmp/mongocxx/mongoc/src/mongoc" \
+      cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local . && \
     make && make install && \
     cd / && rm -rf /tmp/mongocxx
 

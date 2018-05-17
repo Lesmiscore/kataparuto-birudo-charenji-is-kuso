@@ -50,6 +50,20 @@ RUN mkdir -p /tmp/mongocxx && cd /tmp/mongocxx && \
     make && make install && \
     cd / && rm -rf /tmp/mongocxx
 
+RUN mkdir -p /tmp/zeromq/libzmq /tmp/zeromq/cppzmq && \
+    \
+    cd /tmp/zeromq/libzmq && \
+    wget -qO- https://github.com/44uk/catapult-docker/raw/master/pkgs/libzmq-4.2.3.tar.gz | tar xzvf - --strip-components=1 && \
+    mkdir _build && cd _build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr .. && make -j4 && make install && \
+    \
+     cd /tmp/zeromq/cppzmq && \
+    wget -qO- https://github.com/44uk/catapult-docker/raw/master/pkgs/cppzmq-4.2.3.tar.gz | tar xzvf - --strip-components=1 && \
+    mkdir _build && cd _build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr .. && make -j4 && make install && \
+    \
+    rm -rf /tmp/zeromq
+
 ENV PYTHON_EXECUTABLE=/usr/bin/python \
     BOOST_ROOT=/usr/bin \
     GTEST_ROOT=/usr/bin \
@@ -58,6 +72,8 @@ ENV PYTHON_EXECUTABLE=/usr/bin/python \
     ZeroMQ_DIR=/usr/bin \
     cppzmq_DIR=/usr/bin \
     ROCKSDB_ROOT_DIR=/usr/bin
+
+RUN apt-get install -y python3
 
 RUN mkdir -p /tmp/catapult && \
     cd /tmp/catapult && \
